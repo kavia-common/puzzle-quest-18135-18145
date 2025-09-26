@@ -390,6 +390,10 @@ private fun GameScreen(
     onSettings: () -> Unit,
     onLanguage: () -> Unit
 ) {
+    // Basic stub using the new GameViewModel. Full grid UI will be added in the next step.
+    val vm = org.example.app.game.GameViewModelProvider.get()
+    val state by vm.uiState().collectAsState()
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = Color.Transparent
@@ -400,6 +404,21 @@ private fun GameScreen(
                 style = MaterialTheme.typography.titleLarge
             )
         }
+        Spacer(Modifier.height(8.dp))
+        Surface(color = Color.Transparent) {
+            Text(
+                text = "Score: ${state.score} | Moves: ${state.movesLeft}",
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Surface(color = Color.Transparent) {
+            Text(
+                text = "Grid: ${state.grid.rows}x${state.grid.cols}",
+                style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface)
+            )
+        }
+
         Spacer(Modifier.height(12.dp))
         Surface(color = Color.Transparent) {
             Button(onClick = onPause) {
