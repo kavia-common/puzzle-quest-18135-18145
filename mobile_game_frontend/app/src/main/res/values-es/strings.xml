@@ -1,0 +1,40 @@
+<resources>
+    <string name="app_name">Puzzle Quest</string>
+
+    <!-- Menu -->
+    <string name="menu_language">Idioma</string>
+    <string name="menu_pause">Pausa</string>
+    <string name="menu_settings">Ajustes</string>
+
+    <!-- Common -->
+    <string name="common_close">Cerrar</string>
+    <string name="common_done">Listo</string>
+    <string name="common_back">Atrás</string>
+
+    <!-- Main Menu -->
+    <string name="title_main">Puzzle Quest</string>
+    <string name="action_start_game">Comenzar</string>
+    <string name="action_achievements">Logros</string>
+
+    <!-- Game -->
+    <string name="title_game_placeholder">Juego (rejilla Match-3 provisional)</string>
+    <string name="action_pause">Pausa</string>
+
+    <!-- Overlays -->
+    <string name="title_paused">En pausa</string>
+    <string name="resume">Reanudar</string>
+    <string name="restart_level">Reiniciar nivel</string>
+    <string name="quit_to_menu">Salir al menú</string>
+
+    <string name="title_settings">Ajustes</string>
+    <string name="settings_sound">Sonido</string>
+    <string name="settings_music">Música</string>
+    <string name="settings_haptics">Vibración</string>
+
+    <string name="title_language">Idioma</string>
+    <string name="lang_english">Inglés</string>
+    <string name="lang_spanish">Español</string>
+
+    <!-- Sections -->
+    <string name="title_achievements">Logros</string>
+</resources>

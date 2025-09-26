@@ -24,12 +24,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -39,6 +39,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
+import org.example.app.i18n.LocaleManager
 import org.example.app.ui.theme.OceanTheme
 
 /**
@@ -51,21 +53,54 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             OceanTheme {
-                AppRoot()
+                AppRoot(activity = this@MainActivity)
             }
         }
     }
 }
 
-// PUBLIC_INTERFACE
+/** PUBLIC_INTERFACE */
 @Composable
-fun AppRoot() {
-    /** Root composable with navigation and overlay controls using stable Material3 containers. */
-    RootContent()
+fun AppRoot(activity: ComponentActivity) {
+    /**
+     * Root composable with navigation, language observation and overlay controls.
+     * Observes DataStore for language changes and applies locale to the running activity.
+     * To avoid inline/IR issues, we do not use rememberCoroutineScope in nested lambdas.
+     */
+    val langFlow = LocaleManager.observeLanguage(activity)
+    val language by langFlow.collectAsState(initial = "en")
+
+    // Apply locale whenever language changes (including on first composition)
+    LaunchedEffect(language) {
+        LocaleManager.applyLocale(activity, language)
+    }
+
+    // Local state to trigger persistence without capturing composable scope in inline functions
+    var pendingPersistLang by rememberSaveable { mutableStateOf<String?>(null) }
+
+    // Persist language when requested via pendingPersistLang
+    LaunchedEffect(pendingPersistLang) {
+        val code = pendingPersistLang
+        if (code != null) {
+            LocaleManager.setLanguage(activity, code)
+            pendingPersistLang = null
+            // observeLanguage flow will emit and re-apply locale
+        }
+    }
+
+    RootContent(
+        language = language,
+        onSelectLanguage = { newLang ->
+            pendingPersistLang = newLang
+        }
+    )
 }
 
 @Composable
-private fun RootContent() {
+private fun RootContent(
+    language: String,
+    onSelectLanguage: (String) -> Unit
+) {
     val navController = rememberNavController()
 
     var showPause by rememberSaveable { mutableStateOf(false) }
@@ -88,7 +123,6 @@ private fun RootContent() {
                 .fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            // Directly host Nav without Column to avoid inline layout
             Surface(
                 modifier = Modifier.fillMaxSize(),
                 color = Color.Transparent
@@ -104,7 +138,15 @@ private fun RootContent() {
 
         if (showPause) PauseOverlay(onDismiss = { showPause = false })
         if (showSettings) SettingsOverlay(onDismiss = { showSettings = false })
-        if (showLanguage) LanguageOverlay(onDismiss = { showLanguage = false })
+        if (showLanguage) {
+            LanguageOverlay(
+                language = language,
+                onChangeLanguage = { code ->
+                    onSelectLanguage(code)
+                },
+                onDismiss = { showLanguage = false }
+            )
+        }
     }
 }
 
@@ -130,29 +172,29 @@ private fun SimpleTopBar(
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
-        // Actions bar as separate Surface to avoid Row
+        // Actions bar (icons)
         Surface(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 0.dp),
+            modifier = Modifier.padding(horizontal = 12.dp),
             color = Color.Transparent
         ) {
             IconButton(onClick = onLanguage) {
                 Icon(
                     Icons.Outlined.Translate,
-                    contentDescription = "Language",
+                    contentDescription = stringResource(id = R.string.menu_language),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
             IconButton(onClick = onPause) {
                 Icon(
                     Icons.Outlined.Pause,
-                    contentDescription = "Pause",
+                    contentDescription = stringResource(id = R.string.menu_pause),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
             IconButton(onClick = onSettings) {
                 Icon(
                     Icons.Outlined.Settings,
-                    contentDescription = "Settings",
+                    contentDescription = stringResource(id = R.string.menu_settings),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -209,7 +251,6 @@ private fun SimpleOverlayContainer(
     onDismiss: () -> Unit,
     content: @Composable () -> Unit
 ) {
-    // Fullscreen scrim clickable layer
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -217,7 +258,6 @@ private fun SimpleOverlayContainer(
             .clickable(onClick = onDismiss),
         color = Color.Transparent
     ) {
-        // Card container; stack content via sequential elements (no Column)
         Surface(
             modifier = Modifier.padding(24.dp),
             color = MaterialTheme.colorScheme.surface,
@@ -240,15 +280,15 @@ private fun PauseOverlay(onDismiss: () -> Unit) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Paused",
+            stringResource(id = R.string.title_paused),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold)
         )
         Spacer(Modifier.height(16.dp))
-        Button(onClick = onDismiss) { Text("Resume") }
+        Button(onClick = onDismiss) { Text(stringResource(id = R.string.resume)) }
         Spacer(Modifier.height(8.dp))
-        OutlinedButton(onClick = onDismiss) { Text("Restart Level") }
+        OutlinedButton(onClick = onDismiss) { Text(stringResource(id = R.string.restart_level)) }
         Spacer(Modifier.height(8.dp))
-        OutlinedButton(onClick = onDismiss) { Text("Quit to Menu") }
+        OutlinedButton(onClick = onDismiss) { Text(stringResource(id = R.string.quit_to_menu)) }
     }
 }
 
@@ -262,22 +302,26 @@ private fun SettingsOverlay(onDismiss: () -> Unit) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Settings",
+            stringResource(id = R.string.title_settings),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold)
         )
         Spacer(Modifier.height(16.dp))
-        Text("Sound")
+        Text(stringResource(id = R.string.settings_sound))
         Divider()
-        Text("Music")
+        Text(stringResource(id = R.string.settings_music))
         Divider()
-        Text("Haptics")
+        Text(stringResource(id = R.string.settings_haptics))
         Spacer(Modifier.height(16.dp))
-        Button(onClick = onDismiss) { Text("Close") }
+        Button(onClick = onDismiss) { Text(stringResource(id = R.string.common_close)) }
     }
 }
 
 @Composable
-private fun LanguageOverlay(onDismiss: () -> Unit) {
+private fun LanguageOverlay(
+    language: String,
+    onChangeLanguage: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
     SimpleOverlayContainer(onDismiss = onDismiss) {
         Icon(
             Icons.Outlined.Translate,
@@ -286,15 +330,15 @@ private fun LanguageOverlay(onDismiss: () -> Unit) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Language",
+            stringResource(id = R.string.title_language),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold)
         )
         Spacer(Modifier.height(16.dp))
-        Button(onClick = onDismiss) { Text("English") }
+        Button(onClick = { onChangeLanguage("en") }) { Text(stringResource(id = R.string.lang_english)) }
         Spacer(Modifier.height(8.dp))
-        OutlinedButton(onClick = onDismiss) { Text("Español") }
+        OutlinedButton(onClick = { onChangeLanguage("es") }) { Text(stringResource(id = R.string.lang_spanish)) }
         Spacer(Modifier.height(16.dp))
-        Button(onClick = onDismiss) { Text("Done") }
+        Button(onClick = onDismiss) { Text(stringResource(id = R.string.common_done)) }
     }
 }
 
@@ -310,10 +354,9 @@ private fun MainMenuScreen(
         modifier = Modifier.fillMaxSize(),
         color = Color.Transparent
     ) {
-        // Vertical stack simulated with simple surfaces and spacers
         Surface(color = Color.Transparent) {
             Text(
-                text = "Puzzle Quest",
+                text = stringResource(id = R.string.title_main),
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -321,11 +364,23 @@ private fun MainMenuScreen(
             )
         }
         Spacer(Modifier.height(12.dp))
-        Surface(color = Color.Transparent) { Button(onClick = onStartGame) { Text("Start Game") } }
+        Surface(color = Color.Transparent) {
+            Button(onClick = onStartGame) {
+                Text(stringResource(id = R.string.action_start_game))
+            }
+        }
         Spacer(Modifier.height(8.dp))
-        Surface(color = Color.Transparent) { OutlinedButton(onClick = onAchievements) { Text("Achievements") } }
+        Surface(color = Color.Transparent) {
+            OutlinedButton(onClick = onAchievements) {
+                Text(stringResource(id = R.string.action_achievements))
+            }
+        }
         Spacer(Modifier.height(8.dp))
-        Surface(color = Color.Transparent) { OutlinedButton(onClick = onSettings) { Text("Settings") } }
+        Surface(color = Color.Transparent) {
+            OutlinedButton(onClick = onSettings) {
+                Text(stringResource(id = R.string.menu_settings))
+            }
+        }
     }
 }
 
@@ -341,16 +396,28 @@ private fun GameScreen(
     ) {
         Surface(color = Color.Transparent) {
             Text(
-                text = "Game (Match-3 grid placeholder)",
+                text = stringResource(id = R.string.title_game_placeholder),
                 style = MaterialTheme.typography.titleLarge
             )
         }
         Spacer(Modifier.height(12.dp))
-        Surface(color = Color.Transparent) { Button(onClick = onPause) { Text("Pause") } }
+        Surface(color = Color.Transparent) {
+            Button(onClick = onPause) {
+                Text(stringResource(id = R.string.action_pause))
+            }
+        }
         Spacer(Modifier.height(8.dp))
-        Surface(color = Color.Transparent) { OutlinedButton(onClick = onSettings) { Text("Settings") } }
+        Surface(color = Color.Transparent) {
+            OutlinedButton(onClick = onSettings) {
+                Text(stringResource(id = R.string.menu_settings))
+            }
+        }
         Spacer(Modifier.height(8.dp))
-        Surface(color = Color.Transparent) { OutlinedButton(onClick = onLanguage) { Text("Language") } }
+        Surface(color = Color.Transparent) {
+            OutlinedButton(onClick = onLanguage) {
+                Text(stringResource(id = R.string.menu_language))
+            }
+        }
     }
 }
 
@@ -361,10 +428,14 @@ private fun AchievementsScreen(onBack: () -> Unit) {
         color = Color.Transparent
     ) {
         Surface(color = Color.Transparent) {
-            Text("Achievements", style = MaterialTheme.typography.headlineLarge)
+            Text(stringResource(id = R.string.title_achievements), style = MaterialTheme.typography.headlineLarge)
         }
         Spacer(Modifier.height(8.dp))
-        Surface(color = Color.Transparent) { OutlinedButton(onClick = onBack) { Text("Back") } }
+        Surface(color = Color.Transparent) {
+            OutlinedButton(onClick = onBack) {
+                Text(stringResource(id = R.string.common_back))
+            }
+        }
     }
 }
 
@@ -374,8 +445,14 @@ private fun SettingsScreen(onBack: () -> Unit) {
         modifier = Modifier.fillMaxSize(),
         color = Color.Transparent
     ) {
-        Surface(color = Color.Transparent) { Text("Settings", style = MaterialTheme.typography.headlineLarge) }
+        Surface(color = Color.Transparent) {
+            Text(stringResource(id = R.string.title_settings), style = MaterialTheme.typography.headlineLarge)
+        }
         Spacer(Modifier.height(8.dp))
-        Surface(color = Color.Transparent) { OutlinedButton(onClick = onBack) { Text("Back") } }
+        Surface(color = Color.Transparent) {
+            OutlinedButton(onClick = onBack) {
+                Text(stringResource(id = R.string.common_back))
+            }
+        }
     }
 }
