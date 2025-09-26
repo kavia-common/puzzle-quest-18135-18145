@@ -15,6 +15,12 @@ androidApplication {
         implementation("androidx.compose.ui:ui-tooling:1.7.2")
         implementation("androidx.compose.ui:ui-test-junit4:1.7.2")
 
+        // Navigation for Compose
+        implementation("androidx.navigation:navigation-compose:2.8.1")
+
+        // Material Icons (extended set for Translate/Pause/Settings outlined)
+        implementation("androidx.compose.material:material-icons-extended:1.7.2")
+
         // Room (KTX and runtime) - compiler integration deferred until KSP/KAPT is enabled in DCL
         implementation("androidx.room:room-runtime:2.6.1")
         implementation("androidx.room:room-ktx:2.6.1")
