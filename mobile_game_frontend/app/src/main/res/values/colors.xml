@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ocean Professional Palette -->
+    <color name="colorPrimary">#2563EB</color>
+    <color name="colorSecondary">#F59E0B</color>
+    <color name="colorSuccess">#F59E0B</color>
+    <color name="colorError">#EF4444</color>
+
+    <color name="colorBackground">#F9FAFB</color>
+    <color name="colorSurface">#FFFFFF</color>
+    <color name="colorText">#111827</color>
+
+    <!-- Neutrals and supporting shades -->
+    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorOnSecondary">#111827</color>
+    <color name="colorOnBackground">#111827</color>
+    <color name="colorOnSurface">#111827</color>
+    <color name="colorOutline">#E5E7EB</color>
+    <color name="colorShadow">#1F2937</color>
+
+    <!-- Gradient stops approximating: from-blue-500/10 to-gray-50 -->
+    <color name="gradientStart">#1A3B82</color> <!-- translucent deep blue overlay basis -->
+    <color name="gradientStartTint">#1A2563EB</color> <!-- ARGB with ~10% alpha of primary -->
+    <color name="gradientEnd">#FAFAFA</color>
+
+    <!-- Elevated surfaces -->
+    <color name="surfaceVariant">#F3F4F6</color>
+    <color name="onSurfaceVariant">#374151</color>
+</resources>

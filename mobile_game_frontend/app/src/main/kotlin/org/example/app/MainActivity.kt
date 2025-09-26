@@ -10,6 +10,9 @@ import android.widget.TextView
 import android.os.Bundle
 import android.app.Activity
 
+// Explicit import for R since we now use additional resources (colors.xml etc.)
+import org.example.app.R
+
 class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
