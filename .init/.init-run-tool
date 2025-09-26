@@ -1,0 +1,4 @@
+{
+    "command": "./gradlew installDebug",
+    "working_directory": "/home/kavia/workspace/code-generation/puzzle-quest-18135-18145/mobile_game_frontend"
+}
