@@ -27,5 +27,10 @@ androidApplication {
 
         // DataStore (Preferences)
         implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+        // Lifecycle & Coroutines helpers (explicit versions)
+        implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     }
 }
